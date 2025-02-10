@@ -1,66 +1,83 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# Laravel Docker Setup Guide
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+This guide outlines the steps to build and run a Laravel application using Docker.
 
-## About Laravel
+## Prerequisites
+- Docker installed on your system
+- Laravel project stored in `src/` directory
+- MySQL data storage in `data/` directory
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+## Steps
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+### 1️⃣ Build the Docker Images
+Build the necessary images for the Laravel application, MySQL database, Composer, and Node.js:
+```sh
+# Build Laravel app image
+docker build -t myapp .
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+# Build MySQL image
+docker build -t mydb -f dockerfile.mysql .
 
-## Learning Laravel
+# Build Composer image
+docker build -t mycomposer -f dockerfile.composer .
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+# Build Node.js image
+docker build -t mynode -f dockerfile.node .
+```
 
-You may also try the [Laravel Bootcamp](https://bootcamp.laravel.com), where you will be guided through building a modern Laravel application from scratch.
+### 2️⃣ Create a Docker Network
+Create a bridge network named `larwork` to enable communication between containers:
+```sh
+docker network create -d bridge larwork
+```
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+### 3️⃣ Install Dependencies
+Run Composer and Node.js inside temporary containers to install Laravel dependencies:
+```sh
+# Install PHP dependencies using Composer
+docker run --rm -v ${PWD}/src/:/var/app/ mycomposer
 
-## Laravel Sponsors
+# Install JavaScript dependencies using Node.js
+docker run --rm -v ${PWD}/src/:/var/app/ mynode
+```
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+### 4️⃣ Start the MySQL Container
+Run the MySQL container and mount the `data/` directory for persistent storage:
+```sh
+docker run --name mydb --network larwork -d -v ${PWD}/data/:/var/lib/mysql/ mydb
+```
 
-### Premium Partners
+### 5️⃣ Start the Laravel Application Container
+Run the Laravel application container and expose it on port 8080:
+```sh
+docker run --name myapp --network larwork -d -p 8080:80 -v ${PWD}/src/:/var/www/html/ myapp
+```
 
-- **[Vehikl](https://vehikl.com/)**
-- **[Tighten Co.](https://tighten.co)**
-- **[WebReinvent](https://webreinvent.com/)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel/)**
-- **[Cyber-Duck](https://cyber-duck.co.uk)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Jump24](https://jump24.co.uk)**
-- **[Redberry](https://redberry.international/laravel/)**
-- **[Active Logic](https://activelogic.com)**
-- **[byte5](https://byte5.de)**
-- **[OP.GG](https://op.gg)**
+### 6️⃣ Set Correct Permissions
+Ensure Laravel has the necessary permissions for the `storage/` directory:
+```sh
+docker exec myapp /bin/bash -c 'chown -R www-data:www-data ./storage/'
+docker exec myapp /bin/bash -c 'chmod -R 775 storage'
+```
 
-## Contributing
+### 7️⃣ Run Database Migrations
+Execute Laravel migrations inside the running application container:
+```sh
+docker exec myapp php artisan migrate
+```
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+## Accessing the Laravel Application
+Once all steps are completed, access your Laravel project in a web browser at:
+```
+http://localhost:8080
+```
 
-## Code of Conduct
+## Verification
+To confirm the setup, ensure:
+- The web server is running (`myapp` container is up)
+- The MySQL database is running (`mydb` container is up)
+- Laravel loads correctly at `http://localhost:8080`
+- Database migrations complete successfully
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+🚀 Your Laravel app should now be fully functional with Docker! 🎉
 
-## Security Vulnerabilities
-
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
-
-## License
-
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
