@@ -1,13 +1,13 @@
 # Laravel Docker Setup Guide
 
-This guide outlines the steps to build and run a Laravel application using Docker.
+This guide outlines the steps to build and run a Laravel application using Docker for DevOps assignemnt 1 & 2.
 
 ## Prerequisites
 - Docker installed on your system
 - Laravel project stored in `src/` directory
 - MySQL data storage in `data/` directory
 
-## Steps
+## Steps for assignment 1
 
 ### 1️⃣ Build the Docker Images
 Build the necessary images for the Laravel application, MySQL database, Composer, and Node.js:
@@ -72,12 +72,24 @@ Once all steps are completed, access your Laravel project in a web browser at:
 http://localhost:8080
 ```
 
-## Verification
-To confirm the setup, ensure:
-- The web server is running (`myapp` container is up)
-- The MySQL database is running (`mydb` container is up)
-- Laravel loads correctly at `http://localhost:8080`
-- Database migrations complete successfully
+## Steps for assignment 2
+This guide expands on Assignment 1 by introducing Docker Compose to manage the multi-container environment for the Laravel application, MySQL database, Composer, and Node.js.
 
-🚀 Your Laravel app should now be fully functional with Docker! 🎉
+## Prerequisites
+- Docker and Docker Compose installed on your system
+- Laravel project stored in `src/` directory
+- MySQL data storage in `data/` directory
 
+### 1️⃣ Build and Start the Docker Environment with Compose
+To build and start the environment, run the following command in the terminal:
+```bash
+docker-compose up -d (--build)
+```
+This will automatically build the containers defined in the docker-compose.yml file and start them. 
+The --build is optional: the flag ensures that Docker rebuilds any images before starting the services.
+
+### 2️⃣ Access the Laravel Application
+Once everything is set up, you can access the Laravel application in a browser at:
+```
+http://localhost:8080
+```
